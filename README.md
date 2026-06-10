@@ -25,6 +25,8 @@ Mobile app + AI backend that accepts 1–3 photos and returns a structured asses
 
 `backend/app/` is split into `config.py` (settings), `schema.py` (Pydantic models), `service.py` (image processing + AI calls), and `router.py` (HTTP layer). The frontend mirrors the schema in `types/api.ts`.
 
+Copy Report — one-tap clipboard export of the full analysis result.
+
 ---
 
 ## Quick Start
@@ -64,11 +66,13 @@ Scan the QR code with **Expo Go** on your device, or press `i` / `a` for simulat
 
 | Variable | Required | Description |
 |---|---|---|
-| `AI_PROVIDER` | **Yes** | `openai` or `anthropic` — must be set explicitly; the API key alone does not switch providers |
+| `AI_PROVIDER` | **Yes** | `openai`, `anthropic`, or `groq` — must be set explicitly; the API key alone does not switch providers |
 | `OPENAI_API_KEY` | If provider=openai | OpenAI secret key |
 | `OPENAI_MODEL` | No | Default: `gpt-4o` |
 | `ANTHROPIC_API_KEY` | If provider=anthropic | Anthropic secret key |
 | `ANTHROPIC_MODEL` | No | Default: `claude-opus-4-5` |
+| `GROQ_API_KEY` | If provider=groq | Groq secret key |
+| `GROQ_MODEL` | No | Default: `llama-4-scout-17b-16e-instruct` |
 | `CONFIDENCE_THRESHOLD` | No | Float 0–1, default `0.65` |
 | `MAX_IMAGE_SIZE_MB` | No | Per-file limit, default `10` |
 | `MAX_IMAGE_DIMENSION` | No | Resize ceiling px, default `1024` |
