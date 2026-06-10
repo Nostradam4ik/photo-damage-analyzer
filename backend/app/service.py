@@ -124,11 +124,18 @@ def _process_image(data: bytes) -> tuple[bytes, str]:
 
 
 async def _call_openai(images: list[tuple[bytes, str]]) -> AnalysisResult:
-    # "" and None behave differently in the SDK — "" would be sent as a literal base URL
-    client = openai.AsyncOpenAI(
-        api_key=settings.openai_api_key,
-        base_url=settings.openai_base_url or None,
-    )
+    # groq is OpenAI-compatible, so it reuses this same function with different creds
+    if settings.ai_provider == "groq":
+        api_key = settings.groq_api_key
+        base_url = settings.groq_base_url
+        model = settings.groq_model
+    else:
+        api_key = settings.openai_api_key
+        # "" and None behave differently in the SDK — "" would be sent as a literal base URL
+        base_url = settings.openai_base_url or None
+        model = settings.openai_model
+
+    client = openai.AsyncOpenAI(api_key=api_key, base_url=base_url)
 
     user_content: list[dict[str, Any]] = [
         {"type": "text", "text": "Analyse these images for damage and wear."}
@@ -146,7 +153,7 @@ async def _call_openai(images: list[tuple[bytes, str]]) -> AnalysisResult:
         )
 
     response = await client.chat.completions.create(
-        model=settings.openai_model,
+        model=model,
         messages=[
             {"role": "system", "content": _SYSTEM_PROMPT + _OPENAI_JSON_SCHEMA},
             {"role": "user", "content": user_content},
@@ -214,7 +221,7 @@ async def _call_anthropic(images: list[tuple[bytes, str]]) -> AnalysisResult:
 async def analyze_images(raw_images: List[bytes]) -> AnalysisResult:
     processed = [_process_image(img) for img in raw_images]
 
-    # check both — you might set ai_provider=anthropic but forget to add the key
+    # anthropic uses its own SDK; openai and groq both go through the OpenAI-compatible client
     if settings.ai_provider == "anthropic" and settings.anthropic_api_key:
         result = await _call_anthropic(processed)
     else:
