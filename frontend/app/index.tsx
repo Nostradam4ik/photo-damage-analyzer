@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { ImagePickerAsset } from "expo-image-picker";
 
+import CopyReportButton from "../components/CopyReportButton";
 import ErrorBanner from "../components/ErrorBanner";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import PhotoPicker from "../components/PhotoPicker";
@@ -120,6 +121,7 @@ export default function HomeScreen() {
           {state.phase === "result" && (
             <>
               <ResultCard data={state.data} />
+              <CopyReportButton data={state.data} />
               <Pressable
                 style={({ pressed }) => [styles.ghostBtn, pressed && styles.ghostBtnPressed]}
                 onPress={handleReset}
