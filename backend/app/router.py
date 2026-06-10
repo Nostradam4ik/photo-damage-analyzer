@@ -12,9 +12,11 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 _ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}
+# computed once at startup, not per-request
 _MAX_BYTES = settings.max_image_size_mb * 1024 * 1024
 
 
+# NoReturn here so the type-checker knows `result` is always bound after the try/except block
 def _error(status: int, error: str, detail: str) -> NoReturn:
     raise HTTPException(
         status_code=status,
@@ -49,6 +51,7 @@ async def analyze(
 
     raw_images: list[bytes] = []
     for upload in images:
+        # validate content_type before reading the body — avoids buffering 10 MB of a video just to reject it
         if upload.content_type not in _ALLOWED_MIME_TYPES:
             _error(
                 422,
@@ -72,9 +75,11 @@ async def analyze(
     try:
         result = await analyze_images(raw_images)
     except ValueError as exc:
+        # ValueError means the model gave us garbage — surface that to the caller
         logger.error("analysis_value_error", extra={"request_id": request_id, "error": str(exc)})
         _error(422, "Analysis failed", str(exc))
     except Exception as exc:
+        # anything else is probably the AI provider being down
         logger.error("analysis_unexpected_error", extra={"request_id": request_id, "error": str(exc)})
         _error(
             503,

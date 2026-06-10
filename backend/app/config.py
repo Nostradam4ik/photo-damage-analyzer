@@ -10,14 +10,13 @@ class Settings(BaseSettings):
 
     openai_api_key: str = ""
     openai_model: str = "gpt-4o"
-    # Optional override — set to use any OpenAI-compatible provider (Groq, Azure, etc.)
+    # empty string means "use the SDK default" — service.py converts "" to None before passing it
     openai_base_url: str = ""
 
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-opus-4-5"
 
-    # Comma-separated list of origins allowed by CORS (no trailing slashes).
-    # In production, set this to your app's actual origin(s).
+    # env vars can only hold strings, so we store origins as CSV and parse in cors_origins_list
     cors_allowed_origins: str = (
         "http://localhost:8081,"
         "http://localhost:19000,"
@@ -29,7 +28,7 @@ class Settings(BaseSettings):
     max_image_size_mb: int = 10
     max_image_dimension: int = 1024
 
-    # AI call tuning — exposed as env vars so ops can adjust without a deploy.
+    # AI call tuning — exposed as env vars so ops can adjust without a deploy
     ai_max_tokens: int = 1024
     ai_temperature: float = 0.1
 

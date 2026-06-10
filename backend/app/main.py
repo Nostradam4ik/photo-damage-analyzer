@@ -22,6 +22,7 @@ def _setup_logging() -> None:
         jsonlogger.JsonFormatter("%(asctime)s %(name)s %(levelname)s %(message)s")
     )
     root = logging.getLogger()
+    # uvicorn adds its own handlers on reload — clear them first to avoid duplicate lines
     root.handlers.clear()
     root.addHandler(handler)
     root.setLevel(logging.INFO)
@@ -66,6 +67,7 @@ async def attach_request_id(
         extra={"request_id": request_id, "method": request.method, "path": request.url.path},
     )
     response = await call_next(request)
+    # handy for correlating client-side network logs with server-side logs
     response.headers["X-Request-ID"] = request_id
     logger.info(
         "request_finished",
@@ -80,6 +82,7 @@ async def attach_request_id(
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
+    # our own errors pack a dict into detail; FastAPI's built-in errors (e.g. 422) use strings
     if isinstance(exc.detail, dict):
         return JSONResponse(status_code=exc.status_code, content=exc.detail)
     return JSONResponse(
@@ -90,6 +93,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
+    # request_id might not be set if the error happened before our middleware ran
     request_id = getattr(request.state, "request_id", "unknown")
     logger.error("unhandled_exception", extra={"request_id": request_id, "error": str(exc)})
     return JSONResponse(

@@ -10,6 +10,7 @@ import pillow_heif
 from PIL import Image, UnidentifiedImageError
 from pydantic import ValidationError
 
+# must run at import time, before any Image.open() call — patches Pillow globally
 pillow_heif.register_heif_opener()
 
 from .config import settings
@@ -28,6 +29,7 @@ _SYSTEM_PROMPT = (
     "You MUST call the record_analysis tool with your findings — do not respond in prose."
 )
 
+# tool_use gives us actual schema enforcement from the API side, not just the model's goodwill
 _ANALYSIS_TOOL_SCHEMA = {
     "name": "record_analysis",
     "description": "Record the structured damage/wear analysis result.",
@@ -76,7 +78,7 @@ _ANALYSIS_TOOL_SCHEMA = {
     },
 }
 
-# OpenAI JSON-mode prompt suffix
+# json_object mode still needs a schema hint — without this the model sometimes invents field names
 _OPENAI_JSON_SCHEMA = (
     "\n\nRespond ONLY with a valid JSON object that matches exactly this schema:\n"
     '{"subject": string, "determination": boolean, "confidence": number (0-1), '
@@ -102,7 +104,7 @@ def _process_image(data: bytes) -> tuple[bytes, str]:
         Image.LANCZOS,
     )
 
-    # Normalise to JPEG (RGB) or PNG (RGBA / palette)
+    # JPEG can't hold transparency — keep RGBA/palette images as PNG so we don't silently discard the alpha
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGBA")
         save_fmt, mime = "PNG", "image/png"
@@ -121,6 +123,7 @@ def _process_image(data: bytes) -> tuple[bytes, str]:
 
 
 async def _call_openai(images: list[tuple[bytes, str]]) -> AnalysisResult:
+    # "" and None behave differently in the SDK — "" would be sent as a literal base URL
     client = openai.AsyncOpenAI(
         api_key=settings.openai_api_key,
         base_url=settings.openai_base_url or None,
@@ -183,6 +186,7 @@ async def _call_anthropic(images: list[tuple[bytes, str]]) -> AnalysisResult:
         max_tokens=settings.ai_max_tokens,
         system=_SYSTEM_PROMPT,
         tools=[_ANALYSIS_TOOL_SCHEMA],
+        # forces the model to call our tool — without this, weaker models sometimes respond in prose
         tool_choice={"type": "tool", "name": "record_analysis"},
         messages=[{"role": "user", "content": user_content}],
     )
@@ -209,12 +213,13 @@ async def _call_anthropic(images: list[tuple[bytes, str]]) -> AnalysisResult:
 async def analyze_images(raw_images: List[bytes]) -> AnalysisResult:
     processed = [_process_image(img) for img in raw_images]
 
+    # check both — you might set ai_provider=anthropic but forget to add the key
     if settings.ai_provider == "anthropic" and settings.anthropic_api_key:
         result = await _call_anthropic(processed)
     else:
         result = await _call_openai(processed)
 
-    # Enforce threshold — service layer owns this invariant
+    # service layer owns this invariant — model confidence is advisory, threshold is ours
     if result.confidence < settings.confidence_threshold:
         result.needs_more_photos = True
 
