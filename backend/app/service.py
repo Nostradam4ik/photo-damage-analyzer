@@ -26,6 +26,7 @@ _SYSTEM_PROMPT = (
     "You are an expert damage and wear assessment specialist. "
     "Analyse the provided image(s) and determine whether visible damage or wear is present. "
     "Be factual and base your assessment solely on what is visible. "
+    "subject must be a short precise object name, 2-3 words maximum (e.g. 'shut-off valve', 'drain pipe', 'toilet tank'). "
     "You MUST call the record_analysis tool with your findings — do not respond in prose."
 )
 
@@ -219,8 +220,8 @@ async def analyze_images(raw_images: List[bytes]) -> AnalysisResult:
     else:
         result = await _call_openai(processed)
 
-    # service layer owns this invariant — model confidence is advisory, threshold is ours
-    if result.confidence < settings.confidence_threshold:
-        result.needs_more_photos = True
+    # the model can set needs_more_photos for image quality reasons, but our threshold
+    # is the authoritative gate — always recompute so model opinion can't contradict it
+    result.needs_more_photos = result.confidence < settings.confidence_threshold
 
     return result
