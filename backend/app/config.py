@@ -10,6 +10,8 @@ class Settings(BaseSettings):
 
     openai_api_key: str = ""
     openai_model: str = "gpt-4o"
+    # Optional override — set to use any OpenAI-compatible provider (Groq, Azure, etc.)
+    openai_base_url: str = ""
 
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-opus-4-5"

@@ -11,7 +11,7 @@ from .service import analyze_images
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-_ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
+_ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}
 _MAX_BYTES = settings.max_image_size_mb * 1024 * 1024
 
 
@@ -54,7 +54,7 @@ async def analyze(
                 422,
                 "Unsupported file type",
                 f"'{upload.filename}' has type '{upload.content_type}'. "
-                "Accepted types: image/jpeg, image/png, image/webp.",
+                "Accepted types: image/jpeg, image/png, image/webp, image/heic, image/heif.",
             )
 
         data = await upload.read()

@@ -6,8 +6,11 @@ from typing import Any, List
 
 import anthropic
 import openai
+import pillow_heif
 from PIL import Image, UnidentifiedImageError
 from pydantic import ValidationError
+
+pillow_heif.register_heif_opener()
 
 from .config import settings
 from .schema import AnalysisResult
@@ -118,7 +121,10 @@ def _process_image(data: bytes) -> tuple[bytes, str]:
 
 
 async def _call_openai(images: list[tuple[bytes, str]]) -> AnalysisResult:
-    client = openai.AsyncOpenAI(api_key=settings.openai_api_key)
+    client = openai.AsyncOpenAI(
+        api_key=settings.openai_api_key,
+        base_url=settings.openai_base_url or None,
+    )
 
     user_content: list[dict[str, Any]] = [
         {"type": "text", "text": "Analyse these images for damage and wear."}

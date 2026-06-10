@@ -20,11 +20,17 @@ export type AnalyzeState =
 // ---------------------------------------------------------------------------
 
 function classifyError(err: unknown): AnalyzeError {
-  if (err instanceof TypeError && err.message.includes("fetch")) {
+  // React Native throws TypeError("Network request failed"); browsers throw
+  // TypeError("Failed to fetch"). Both are network-level failures from fetch().
+  // Any TypeError reaching here must have come from fetch() itself — the
+  // response.json() path is already caught and re-thrown as ServerError below.
+  if (err instanceof TypeError) {
     return {
       kind: "network",
       message: "Cannot reach the server",
-      detail: "Check your connection and make sure the backend is running.",
+      detail:
+        "Make sure the backend is running and that EXPO_PUBLIC_API_BASE_URL " +
+        "points to your machine's IP address, not localhost, when using a physical device.",
     };
   }
   if (err instanceof ServerError) {
@@ -54,7 +60,11 @@ async function postAnalyze(assets: ImagePickerAsset[]): Promise<AnalysisResponse
     const uri = asset.uri;
     const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
     const mime =
-      ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+      ext === "png" ? "image/png" :
+      ext === "webp" ? "image/webp" :
+      ext === "heic" ? "image/heic" :
+      ext === "heif" ? "image/heif" :
+      "image/jpeg";
 
     form.append("images", {
       uri,
