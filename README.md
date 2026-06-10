@@ -2,7 +2,7 @@
 
 ## Overview
 
-Mobile app + AI backend that accepts 1–3 photos and returns a structured assessment of visible damage or wear. The backend calls GPT-4o or Claude (configurable via `AI_PROVIDER`) with a strict JSON contract, validates the model's output via Pydantic, and enforces a confidence threshold before sending results to the client.
+Mobile app + AI backend that accepts 1–3 photos and returns a structured assessment of visible damage or wear. The backend calls Groq (Llama 4), OpenAI, or Anthropic (configurable via `AI_PROVIDER`) with a strict JSON contract, validates the model's output via Pydantic, and enforces a confidence threshold before sending results to the client.
 
 ---
 
@@ -154,4 +154,4 @@ Returns `{ "status": "ok" }`.
 
 - **Confidence calibration**: The 0.65 threshold is arbitrary; in production it should be tuned against a labelled dataset.
 - **MIME validation**: We check `Content-Type` headers and Pillow's format detection, but a determined client could spoof both — a magic-byte check would be more robust.
-- **Anthropic tool-use reliability**: The `tool_choice: {type: "tool"}` approach forces a structured call, but I haven't stress-tested it against ambiguous or very dark images.
+- **Groq structured output reliability**: The tool-call approach forces a JSON response, but I haven't stress-tested it against ambiguous or very dark images.
