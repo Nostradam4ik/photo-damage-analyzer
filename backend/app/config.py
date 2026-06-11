@@ -14,10 +14,10 @@ class Settings(BaseSettings):
     openai_base_url: str = ""
 
     anthropic_api_key: str = ""
-    anthropic_model: str = "claude-opus-4-5"
+    anthropic_model: str = "claude-opus-4-8"
 
     groq_api_key: str = ""
-    groq_model: str = "llama-4-scout-17b-16e-instruct"
+    groq_model: str = "meta-llama/llama-4-scout-17b-16e-instruct"
     groq_base_url: str = "https://api.groq.com/openai/v1"
 
     # env vars can only hold strings, so we store origins as CSV and parse in cors_origins_list

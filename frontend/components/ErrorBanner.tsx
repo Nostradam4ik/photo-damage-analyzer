@@ -10,17 +10,17 @@ interface Props {
 }
 
 export default function ErrorBanner({ error, onRetry }: Props) {
-  const isNetwork = error.kind === "network";
+  const isRetryable = error.kind === "network" || error.kind === "timeout";
 
   return (
     <View style={styles.container}>
       <View style={styles.iconRow}>
-        <Text style={styles.icon}>{isNetwork ? "⚡" : "⚠"}</Text>
+        <Text style={styles.icon}>{isRetryable ? "⚡" : "⚠"}</Text>
         <Text style={styles.title}>{error.message}</Text>
       </View>
       <Text style={styles.detail}>{error.detail}</Text>
 
-      {isNetwork && onRetry && (
+      {isRetryable && onRetry && (
         <Pressable
           style={({ pressed }) => [styles.retryBtn, pressed && styles.retryBtnPressed]}
           onPress={onRetry}
@@ -30,7 +30,7 @@ export default function ErrorBanner({ error, onRetry }: Props) {
         </Pressable>
       )}
 
-      {!isNetwork && (
+      {!isRetryable && (
         <Text style={styles.fallback}>
           If this continues, please complete a manual review and contact support.
         </Text>

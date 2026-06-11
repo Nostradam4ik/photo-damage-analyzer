@@ -20,6 +20,15 @@ export type AnalyzeState =
 // ---------------------------------------------------------------------------
 
 function classifyError(err: unknown): AnalyzeError {
+  // AbortError fires when our 60-second timeout controller aborts the request.
+  if (err instanceof Error && err.name === "AbortError") {
+    return {
+      kind: "timeout",
+      message: "Request timed out",
+      detail:
+        "The analysis took longer than 60 seconds. The server may be under load — please try again.",
+    };
+  }
   // React Native throws TypeError("Network request failed"); browsers throw
   // TypeError("Failed to fetch"). Both are network-level failures from fetch().
   // Any TypeError reaching here must have come from fetch() itself — the
@@ -53,6 +62,8 @@ class ServerError extends Error {
 // API call
 // ---------------------------------------------------------------------------
 
+const ANALYZE_TIMEOUT_MS = 60_000;
+
 async function postAnalyze(assets: ImagePickerAsset[]): Promise<AnalysisResponse> {
   const form = new FormData();
 
@@ -73,10 +84,19 @@ async function postAnalyze(assets: ImagePickerAsset[]): Promise<AnalysisResponse
     } as unknown as Blob);
   }
 
-  const response = await fetch(`${API_BASE_URL}/analyze`, {
-    method: "POST",
-    body: form,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), ANALYZE_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/analyze`, {
+      method: "POST",
+      body: form,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   let json: unknown;
   try {

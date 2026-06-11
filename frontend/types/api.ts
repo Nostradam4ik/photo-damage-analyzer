@@ -20,8 +20,8 @@ export interface ApiError {
   detail: string;
 }
 
-// three buckets: no connection, backend returned an error, got a response but wrong shape
-export type AnalyzeErrorKind = "network" | "server" | "validation";
+// four buckets: no connection, request timed out, backend returned an error, got a response but wrong shape
+export type AnalyzeErrorKind = "network" | "timeout" | "server" | "validation";
 
 export interface AnalyzeError {
   kind: AnalyzeErrorKind;

@@ -219,10 +219,17 @@ async def _call_anthropic(images: list[tuple[bytes, str]]) -> AnalysisResult:
 
 
 async def analyze_images(raw_images: List[bytes]) -> AnalysisResult:
+    if settings.ai_provider == "anthropic" and not settings.anthropic_api_key:
+        raise ValueError("AI_PROVIDER is 'anthropic' but ANTHROPIC_API_KEY is not set.")
+    if settings.ai_provider == "openai" and not settings.openai_api_key:
+        raise ValueError("AI_PROVIDER is 'openai' but OPENAI_API_KEY is not set.")
+    if settings.ai_provider == "groq" and not settings.groq_api_key:
+        raise ValueError("AI_PROVIDER is 'groq' but GROQ_API_KEY is not set.")
+
     processed = [_process_image(img) for img in raw_images]
 
     # anthropic uses its own SDK; openai and groq both go through the OpenAI-compatible client
-    if settings.ai_provider == "anthropic" and settings.anthropic_api_key:
+    if settings.ai_provider == "anthropic":
         result = await _call_anthropic(processed)
     else:
         result = await _call_openai(processed)

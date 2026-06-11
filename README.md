@@ -50,11 +50,16 @@ docker-compose up --build
 
 ### Frontend
 
+> **Before you start:** `frontend/.env` must point at your machine's LAN IP — `localhost` does not reach the host from a physical device.
+> Find your IP with `ipconfig` (Windows) or `ifconfig` (Mac/Linux) and update `frontend/.env`:
+> ```
+> EXPO_PUBLIC_API_BASE_URL=http://192.168.x.x:8000
+> ```
+> The simulator can use `localhost:8000` without changes.
+
 ```bash
 cd frontend
 npm install
-# Create a .env file to point at your backend (optional — defaults to localhost:8000):
-echo "EXPO_PUBLIC_API_BASE_URL=http://192.168.1.x:8000" > .env
 npx expo start
 ```
 
@@ -70,9 +75,9 @@ Scan the QR code with **Expo Go** on your device, or press `i` / `a` for simulat
 | `OPENAI_API_KEY` | If provider=openai | OpenAI secret key |
 | `OPENAI_MODEL` | No | Default: `gpt-4o` |
 | `ANTHROPIC_API_KEY` | If provider=anthropic | Anthropic secret key |
-| `ANTHROPIC_MODEL` | No | Default: `claude-opus-4-5` |
+| `ANTHROPIC_MODEL` | No | Default: `claude-opus-4-8` |
 | `GROQ_API_KEY` | If provider=groq | Groq secret key |
-| `GROQ_MODEL` | No | Default: `llama-4-scout-17b-16e-instruct` |
+| `GROQ_MODEL` | No | Default: `meta-llama/llama-4-scout-17b-16e-instruct` |
 | `CONFIDENCE_THRESHOLD` | No | Float 0–1, default `0.65` |
 | `MAX_IMAGE_SIZE_MB` | No | Per-file limit, default `10` |
 | `MAX_IMAGE_DIMENSION` | No | Resize ceiling px, default `1024` |
@@ -155,3 +160,4 @@ Returns `{ "status": "ok" }`.
 - **Confidence calibration**: The 0.65 threshold is arbitrary; in production it should be tuned against a labelled dataset.
 - **MIME validation**: We check `Content-Type` headers and Pillow's format detection, but a determined client could spoof both — a magic-byte check would be more robust.
 - **Groq structured output reliability**: The tool-call approach forces a JSON response, but I haven't stress-tested it against ambiguous or very dark images.
+- **OpenAI schema enforcement**: The OpenAI/Groq path uses `response_format: json_object`, which guarantees valid JSON but not schema conformance — the field list is a hint in the system prompt. GPT-4o supports `response_format: json_schema` for true schema enforcement, but Groq does not, so a single code path uses the weaker mode. In production this should be split: structured outputs for OpenAI, tool-call forcing for Groq.
