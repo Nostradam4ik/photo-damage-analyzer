@@ -151,7 +151,7 @@ Returns `{ "status": "ok" }`.
 - Images are not persisted (processed in memory only).
 - No retry logic on the AI call (one attempt per request).
 - Expo web is untested; UI is optimised for mobile.
-- No end-to-end tests — only Pydantic validation acts as a contract test.
+- No end-to-end test against a real model (it would need API keys). The 46 backend tests cover the contract, image handling, both provider paths and the API's error shapes with the providers faked, and CI also type-checks the front end.
 
 ---
 
