@@ -3,10 +3,12 @@ import sys
 import uuid
 from collections.abc import Awaitable, Callable
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from pythonjsonlogger import jsonlogger
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import settings
 from .router import router
@@ -80,14 +82,28 @@ async def attach_request_id(
 # Error handlers — normalise all errors to {error, detail}
 # ---------------------------------------------------------------------------
 
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    # our own errors pack a dict into detail; FastAPI's built-in errors (e.g. 422) use strings
+# registered on Starlette's base class so it also covers routing errors (404, 405),
+# not only the HTTPException that FastAPI raises from our own routes
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    # our own errors pack a dict into detail; the framework's own errors (e.g. 404) use strings
     if isinstance(exc.detail, dict):
         return JSONResponse(status_code=exc.status_code, content=exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": "Request error", "detail": str(exc.detail)},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # FastAPI's default body is a list of dicts; the client expects {error, detail} with a string
+    first = exc.errors()[0] if exc.errors() else {}
+    field = ".".join(str(part) for part in first.get("loc", ()) if part != "body")
+    message = first.get("msg", "The request is invalid.")
+    return JSONResponse(
+        status_code=422,
+        content={"error": "Invalid request", "detail": f"{field}: {message}" if field else message},
     )
 
 

@@ -2,7 +2,6 @@ import logging
 from typing import Annotated, List, NoReturn
 
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
-from fastapi.responses import JSONResponse
 
 from .config import settings
 from .schema import AnalysisResponse
