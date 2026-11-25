@@ -161,3 +161,7 @@ Returns `{ "status": "ok" }`.
 - **MIME validation**: We check `Content-Type` headers and Pillow's format detection, but a determined client could spoof both — a magic-byte check would be more robust.
 - **Groq structured output reliability**: The tool-call approach forces a JSON response, but I haven't stress-tested it against ambiguous or very dark images.
 - **OpenAI schema enforcement**: The OpenAI/Groq path uses `response_format: json_object`, which guarantees valid JSON but not schema conformance — the field list is a hint in the system prompt. GPT-4o supports `response_format: json_schema` for true schema enforcement, but Groq does not, so a single code path uses the weaker mode. In production this should be split: structured outputs for OpenAI, tool-call forcing for Groq.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
